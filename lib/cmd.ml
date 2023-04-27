@@ -71,9 +71,8 @@ module KotobaInit = struct
       in
 
       let () = if not App.is_kotoba_word_file_exist (* Should always be true*) then
-        match Pathbuf.File.create_file ~on_error:(App.Error.UnableToCreateFile (Pathbuf.to_string App.kotoba_words_file)) App.kotoba_words_file with
-        | Ok _ -> ()
-        | Error e -> raise @@ App.Error.KotobaErrror e
+        let words = Word.empty in
+        App.write_json words ()
       in
       let () = Printf.printf "Kotoba initialized\n%!" in
       ()
@@ -143,14 +142,25 @@ module KotobaAdd = struct
       ]
 
       let add_function cmd = 
-        ignore cmd; ()
+        let {input_lang; word; translations} = cmd in
+        let input_lang = String.trim input_lang in
+        let word = String.trim word in
+        let words = App.kotoba_word_json () in
+        let translations = translations |> List.map Word.create_translation in
+        let added_kind, extented_words = Word.add (input_lang, word, translations) words in
+        let () = App.write_json extented_words () in
+        let () = match added_kind with
+          | `Added -> Printf.printf "The word \"%s\" has been added\n%!" word
+          | `Extended n -> Printf.printf "The word \"%s\"'s translations has been extended by %u\n%!" word n
+        in
+        ()
 
     let cmd = 
       let info = 
         Cmd.info name 
         ~doc ~man 
       in
-      Cmd.v  info  (add_term add_function)
+      Cmd.v info (add_term add_function)
   
 end
 

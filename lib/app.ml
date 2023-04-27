@@ -16,10 +16,23 @@
 (*                                                                                            *)
 (**********************************************************************************************)
 
+
+module Error = struct
+  type kotoba_error = 
+  | UnableToCreateFolder of string
+  | UnableToCreateFile of string
+  | UnableToOpenFile of string
+  | UnexistingFile of string
+  | UnableToParseJson of string
+  | KotobaFolderAlreadyExist
+
+  exception KotobaErrror of kotoba_error
+end
+
+
 let home_dir = Sys.getenv "HOME"
 
 let kotoba_default_input = "KOTOBA_DEFAULT_INPUT_LANG"
-let kotoba_default_output = "KOTOBA_DEFAULT_OUTPUT_LANG"
 
 let config_dir = ".config"
 let kotoba_folder_name = "kotoba"
@@ -41,12 +54,18 @@ let is_kotoba_word_file_exist =
   let path = Pathbuf.to_string kotoba_words_file in
   Sys.file_exists kotoba_folder_name && not @@ Sys.is_directory path
 
+let kotoba_word_json () = 
+  let path = Pathbuf.to_string kotoba_words_file in
+  let () = if not @@ Sys.file_exists path then 
+    raise @@ Error.KotobaErrror (Error.UnexistingFile path)
+  in 
+  match Word.words_of_yojson @@ Yojson.Safe.from_file path with
+  | Error _ -> raise @@ Error.(KotobaErrror (UnableToParseJson path) )
+  | Ok json -> json
 
-module Error = struct
-  type kotoba_error = 
-  | UnableToCreateFolder of string
-  | UnableToCreateFile of string
-  | KotobaFolderAlreadyExist
-
-  exception KotobaErrror of kotoba_error
-end
+let write_json words () = 
+  let path = Pathbuf.to_string kotoba_words_file in
+  let () = if not @@ Sys.file_exists path then 
+    raise @@ Error.KotobaErrror (Error.UnexistingFile path)
+  in
+  words |> Word.words_to_yojson |> Yojson.Safe.to_file path

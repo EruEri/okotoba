@@ -27,3 +27,36 @@ type word = {
   translations: translation list;
 }
 [@@deriving yojson]
+
+type words = word list
+[@@deriving yojson]
+
+module TranslationSet = Set.Make(struct type t = translation let compare = Stdlib.compare end)
+
+let empty : words = []
+
+let replace_translation translations word = 
+  {
+    word with translations = translations
+  }
+
+let find_word_opt (il, word) words = 
+  words |> List.find_opt (fun w -> w.word = word && w.input_lang = il)
+
+let create_translation (output_lang, translation) =
+  {
+    output_lang = String.trim output_lang;
+    translation = String.trim translation
+  }
+
+let add (il, word, trans) words = 
+  match find_word_opt (il, word) words with
+  | None -> 
+    let word = {input_lang = il; translations = trans; word} in
+    `Added, word::words
+  | Some word -> 
+    let comming_translation_set = TranslationSet.of_list trans in
+    let existing_translation_set = TranslationSet.of_list word.translations in
+    let translations_set = TranslationSet.union comming_translation_set existing_translation_set in
+    let extended_word = replace_translation (TranslationSet.elements translations_set) word in
+    `Extended(TranslationSet.cardinal translations_set - List.length trans), extended_word::words
