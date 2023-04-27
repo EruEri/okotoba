@@ -40,8 +40,19 @@ let replace_translation translations word =
     word with translations = translations
   }
 
+let drop f list = 
+  list |> List.fold_left (fun (acc_found, acc_list) value -> 
+    if Option.is_some acc_found then
+      acc_found, value::acc_list
+    else
+      if f value then
+        (Some value), acc_list
+      else
+        acc_found, value::acc_list
+  ) (None, [])
+
 let find_word_opt (il, word) words = 
-  words |> List.find_opt (fun w -> w.word = word && w.input_lang = il)
+  words |> drop (fun w -> w.word = word && w.input_lang = il)
 
 let create_translation (output_lang, translation) =
   {
@@ -51,10 +62,10 @@ let create_translation (output_lang, translation) =
 
 let add (il, word, trans) words = 
   match find_word_opt (il, word) words with
-  | None -> 
+  | None, words -> 
     let word = {input_lang = il; translations = trans; word} in
     `Added, word::words
-  | Some word -> 
+  | Some word, words -> 
     let comming_translation_set = TranslationSet.of_list trans in
     let existing_translation_set = TranslationSet.of_list word.translations in
     let translations_set = TranslationSet.union comming_translation_set existing_translation_set in

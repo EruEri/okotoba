@@ -68,4 +68,6 @@ let write_json words () =
   let () = if not @@ Sys.file_exists path then 
     raise @@ Error.KotobaErrror (Error.UnexistingFile path)
   in
-  words |> Word.words_to_yojson |> Yojson.Safe.to_file path
+  Out_channel.with_open_bin path (fun oc ->
+    words |> Word.words_to_yojson |> Yojson.Safe.to_channel oc
+  )
