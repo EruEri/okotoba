@@ -18,6 +18,9 @@
 
 let home_dir = Sys.getenv "HOME"
 
+let kotoba_default_input = "KOTOBA_DEFAULT_INPUT_LANG"
+let kotoba_default_output = "KOTOBA_DEFAULT_OUTPUT_LANG"
+
 let config_dir = ".config"
 let kotoba_folder_name = "kotoba"
 
