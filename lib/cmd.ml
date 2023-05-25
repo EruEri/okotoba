@@ -49,28 +49,22 @@ module KotobaInit = struct
 
     let init_function cmd = 
       let {force} = cmd in
-      let config_folder = Pathbuf.to_string App.config_path in
-      let () = match Pathbuf.is_file_exists App.config_path with
+      let () = if App.is_kotoba_folder_exist () && not force || App.is_kotoba_word_file_exist () && not force then
+        raise @@ App.Error.KotobaErrror App.Error.KotobaFolderAlreadyExist
+      in
+      let () = match App.is_kotoba_folder_exist () with
       | true -> ()
       | false -> begin 
-        match Pathbuf.File.create_folder ~on_error:(App.Error.UnableToCreateFolder config_folder) App.config_path with
+        match Pathbuf.File.create_folder ~on_error:(App.Error.UnableToCreateFolder App.kotoba_data_dir) App.kotoba_data_dir with
         | Ok _ -> ()
         | Error e -> raise @@ App.Error.KotobaErrror e
       end in
-      let () = if App.is_kotoba_folder_exist && not force || App.is_kotoba_word_file_exist && not force then
-        raise @@ App.Error.KotobaErrror App.Error.KotobaFolderAlreadyExist
-      in
-      let () = if App.is_kotoba_word_file_exist && force then 
-        Pathbuf.File.rmrf (Pathbuf.to_string App.kotoba_words_file) ()
+
+      let () = if App.is_kotoba_word_file_exist () && force then 
+        Pathbuf.File.rmrf App.kotoba_word_file ()
       in
 
-      let () = if not App.is_kotoba_folder_exist then 
-        match Pathbuf.File.create_folder ~on_error:(App.Error.UnableToCreateFolder (Pathbuf.to_string App.kotoba_path)) App.kotoba_path with
-        | Ok _ -> ()
-        | Error e -> raise @@ App.Error.KotobaErrror e
-      in
-
-      let () = if not App.is_kotoba_word_file_exist (* Should always be true*) then
+      let () = if not @@ App.is_kotoba_word_file_exist () (* Should always be true*) then
         let words = Word.empty in
         App.write_json words ()
       in
@@ -184,6 +178,7 @@ module Main = struct
       ~man 
       ~version
     in
+    let () = App.Error.register_kotota_exn () in
     Cmd.group info [KotobaInit.cmd; KotobaAdd.cmd]
 
     let eval () = cmd |> Cmdliner.Cmd.eval

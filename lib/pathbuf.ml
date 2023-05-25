@@ -32,8 +32,7 @@ let is_file_exists pathbuf = pathbuf |> to_string |> Sys.file_exists
 
 module File = struct
   let create_folder ?(perm = 0o700) ~on_error folder = 
-    let to_path_string = to_string folder in
-    match Sys.mkdir to_path_string perm with
+    match Sys.mkdir folder perm with
     | exception _ -> 
       Error on_error
     | () -> Ok folder

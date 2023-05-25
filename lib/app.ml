@@ -27,10 +27,21 @@ module Error = struct
   | KotobaFolderAlreadyExist
 
   exception KotobaErrror of kotoba_error
+
+  let string_of_error = let open Printf in function
+  | UnableToCreateFolder path -> sprintf "Unable to create the folder \"%s\"" path
+  | UnableToCreateFile path -> sprintf "Unable to create the file \"%s\"" path
+  | UnableToOpenFile path -> sprintf "Unable to open the file \"%s\"" path
+  | UnexistingFile path -> sprintf "Unexisting file \"%s\"" path
+  | UnableToParseJson path -> sprintf "Error while parsing the json file: %s" path
+  | KotobaFolderAlreadyExist -> "Le ficher kotoba existe deja"
+
+  let register_kotota_exn () = 
+    Printexc.register_printer (function
+    | KotobaErrror ke -> Option.some @@ string_of_error ke
+    | _ -> None 
+    )
 end
-
-
-let home_dir = Sys.getenv "HOME"
 
 let kotoba_default_input = "KOTOBA_DEFAULT_INPUT_LANG"
 
@@ -39,35 +50,28 @@ let kotoba_folder_name = "kotoba"
 
 let word_file = "words.json"
 
-let config_path = Pathbuf.from_list [home_dir; config_dir]
-let kotoba_path = Pathbuf.push kotoba_folder_name config_path
+let kotoba_data_dir = 
+  let xdg = Xdg.create ~env:Sys.getenv_opt () in
+  let dir = Xdg.data_dir xdg in
+  Printf.sprintf "%s%s%s" dir Filename.dir_sep kotoba_folder_name
 
-let kotoba_words_file = Pathbuf.push word_file kotoba_path
+let kotoba_word_file = 
+  Printf.sprintf "%s%s%s" kotoba_data_dir Filename.dir_sep word_file
+let is_kotoba_folder_exist () = 
+  Sys.file_exists kotoba_data_dir && Sys.is_directory kotoba_data_dir
 
-
-
-let is_kotoba_folder_exist = 
-  let path = Pathbuf.to_string kotoba_path in 
-  Sys.file_exists path && Sys.is_directory path
-
-let is_kotoba_word_file_exist = 
-  let path = Pathbuf.to_string kotoba_words_file in
-  Sys.file_exists kotoba_folder_name && not @@ Sys.is_directory path
+let is_kotoba_word_file_exist () = 
+  Sys.file_exists kotoba_word_file && not @@ Sys.is_directory kotoba_word_file
 
 let kotoba_word_json () = 
-  let path = Pathbuf.to_string kotoba_words_file in
-  let () = if not @@ Sys.file_exists path then 
-    raise @@ Error.KotobaErrror (Error.UnexistingFile path)
+  let () = if not @@ Sys.file_exists kotoba_word_file then 
+    raise @@ Error.KotobaErrror (Error.UnexistingFile kotoba_word_file)
   in 
-  match Word.words_of_yojson @@ Yojson.Safe.from_file path with
-  | Error _ -> raise @@ Error.(KotobaErrror (UnableToParseJson path) )
+  match Word.words_of_yojson @@ Yojson.Safe.from_file kotoba_word_file with
+  | Error _ -> raise @@ Error.(KotobaErrror (UnableToParseJson kotoba_word_file) )
   | Ok json -> json
 
 let write_json words () = 
-  let path = Pathbuf.to_string kotoba_words_file in
-  let () = if not @@ Sys.file_exists path then 
-    raise @@ Error.KotobaErrror (Error.UnexistingFile path)
-  in
-  Out_channel.with_open_bin path (fun oc ->
+  Out_channel.with_open_bin kotoba_word_file (fun oc ->
     words |> Word.words_to_yojson |> Yojson.Safe.to_channel oc
   )
