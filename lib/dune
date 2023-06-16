@@ -1,5 +1,5 @@
 (library
  (name okotoba)
- (libraries cmdliner yojson ppx_deriving_yojson.runtime unix xdg)
+ (libraries cmdliner yojson ppx_deriving_yojson.runtime unix xdg kotobaCmd)
   (preprocess (pps ppx_deriving_yojson))
 )

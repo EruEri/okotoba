@@ -15,4 +15,6 @@
 (*                                                                                            *)
 (**********************************************************************************************)
 
-let eval = KotobaCmd.eval
+module App = App
+module Error = App.Error
+module Word = Word

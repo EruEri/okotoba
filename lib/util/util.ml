@@ -15,41 +15,5 @@
 (*                                                                                            *)
 (**********************************************************************************************)
 
-type pathbuf = string list
 
-let pop : pathbuf -> pathbuf = List.tl
-
-let push: string -> pathbuf -> pathbuf = List.cons
-
-let to_string pathbuf = pathbuf |> List.rev |> String.concat Filename.dir_sep
-
-let create name: pathbuf = [name]
-let from_list l = l |> List.rev 
-
-let exists_in ~file ~pathbuf = Sys.file_exists (pathbuf |> push file |> to_string)
-
-let is_file_exists pathbuf = pathbuf |> to_string |> Sys.file_exists
-
-module File = struct
-  let create_folder ?(perm = 0o700) ~on_error folder = 
-    match Sys.mkdir folder perm with
-    | exception _ -> 
-      Error on_error
-    | () -> Ok folder
-
-  let create_file ?(on_file = fun _ -> ()) ~on_error  file = 
-    let to_file_path = to_string file in
-    match Out_channel.open_bin to_file_path with
-    | exception _ -> Error on_error
-    | outchan -> 
-      let () = on_file outchan in
-      let () =  close_out outchan in 
-      Ok file
-    let rec rmrf path () = 
-      match Sys.is_directory path with
-    | true ->
-      Sys.readdir path |>
-      Array.iter (fun name -> rmrf (Filename.concat path name) ());
-      Unix.rmdir path
-    | false -> Sys.remove path
-end
+module File = File

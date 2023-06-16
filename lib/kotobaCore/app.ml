@@ -1,4 +1,3 @@
-
 (**********************************************************************************************)
 (*                                                                                            *)
 (* This file is part of okotoba: A little word translation keeper                             *)
@@ -15,7 +14,6 @@
 (* If not, see <http://www.gnu.org/licenses/>.                                                *)
 (*                                                                                            *)
 (**********************************************************************************************)
-
 
 module Error = struct
   type kotoba_error = 
