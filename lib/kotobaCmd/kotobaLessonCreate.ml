@@ -15,27 +15,60 @@
 (*                                                                                            *)
 (**********************************************************************************************)
 
-
 open Cmdliner
-let version = "0.1.0"
 
-let name = "okotoba"
+let command_name = "create"
 
-let doc = "kotoba is a little program to store word along with their translation"
+type command = {
+  numero: int option;
+  name: string;
+}
 
-let man = [
-  `S Cmdliner.Manpage.s_description;
-  `P "kotoba is a little program to store word along with their translation"
+let numero_term =
+  Arg.(
+    value & opt (some int) None & info ["n"; "numero"] ~doc:"numero of the lesson" ~docv:"no_lesson"
+  )
+let name_term =
+  Arg.(
+    required & Arg.pos 0 (Arg.some string) None & info [] ~docv:"lesson name"
+  )
+
+let combine fcommand = 
+  let combine numero name = 
+    fcommand {numero; name}
+  in
+  Term.(
+    const combine
+    $ numero_term
+    $ name_term
+  )
+
+let create_doc = "Create a lesson"
+
+let create_man = [
+  `S Manpage.s_description;
+  `P "Create a new lesson by giving its name and an optional number";
+  `P "After that, a wizard will help you create your lesson";
+  `P "A lesson is a list of definition";
+  `Noblank;
+  `P "A definition is:";
+  `I ("- $(b,a main word)", "which represent the word that you want to learn");
+  `Noblank;
+  `I ("- $(b,alternatives)", "which represent the others writting for the main word");
+  `Noblank;
+  `I ("- $(b,meaning)", "which represent the meaning of the main word");
+  `Noblank;
+  `I ("- $(b,sample)", "an optional audio")
 ]
 
-let cmd = 
-  let info = 
-    Cmd.info name
-    ~doc
-    ~man 
-    ~version
-  in
-  let () = KotobaCore.Error.register_kotota_exn () in
-  Cmd.group info [KotobaInit.cmd; KotobaAdd.cmd; KotobaLesson.command]
+let create_lesson command = 
+  let () = ignore command in
+  ()
 
-  let eval () = cmd |> Cmdliner.Cmd.eval
+let command = 
+  let info = 
+    Cmd.info command_name
+    ~doc:create_doc
+    ~man:create_man
+  in
+  Cmd.v info @@ combine create_lesson

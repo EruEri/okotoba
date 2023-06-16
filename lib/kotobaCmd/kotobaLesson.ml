@@ -15,27 +15,21 @@
 (*                                                                                            *)
 (**********************************************************************************************)
 
-
 open Cmdliner
-let version = "0.1.0"
 
-let name = "okotoba"
+let name = "lesson"
 
-let doc = "kotoba is a little program to store word along with their translation"
+let doc = "Allows you to create set of definitions and training on them"
 
 let man = [
-  `S Cmdliner.Manpage.s_description;
-  `P "kotoba is a little program to store word along with their translation"
+  `S Manpage.s_description
+  
 ]
 
-let cmd = 
+let command = 
   let info = 
     Cmd.info name
     ~doc
-    ~man 
-    ~version
+    ~man
   in
-  let () = KotobaCore.Error.register_kotota_exn () in
-  Cmd.group info [KotobaInit.cmd; KotobaAdd.cmd; KotobaLesson.command]
-
-  let eval () = cmd |> Cmdliner.Cmd.eval
+  Cmd.group info [KotobaLessonCreate.command]
