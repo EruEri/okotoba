@@ -62,8 +62,9 @@ let create_man = [
 ]
 
 let create_lesson command = 
-  let () = ignore command in
-  let _lesson = KotobaCore.Wizard.CreateLession.ask_lesson () in
+  let {numero; name} = command in
+  let words = KotobaCore.Wizard.CreateLession.ask_lesson () in
+  let () = KotobaCore.Lesson.create_lesson ~numero name words in
   ()
 
 let command = 

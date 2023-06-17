@@ -59,3 +59,53 @@ type lesson = {
 
 type lessons = lesson list
 [@@deriving yojson]
+
+
+let default_score = {
+  good = 0;
+  total_attemps = 0;
+}
+
+let default_stat = 
+  let time = Unix.time () in 
+  {
+    difficulty = Hard;
+    score = default_score;
+    last_play = time;
+    creation_instant = time
+  }
+
+let lesson_format_name ~numero lesson_name = 
+  let lesson_name = lesson_name |> String.map (fun c -> if c = ' ' then '-' else c ) in
+  let numero = numero |>  Option.value ~default:0 in
+  Printf.sprintf "%02u-%s" numero lesson_name
+
+let does_lesson_exist lesson_formatted = 
+  let files = Sys.readdir (App.kotoba_lesson_dir) in
+  Array.mem lesson_formatted files
+
+let create_lesson ~numero lesson_name lwords =
+  let name = lesson_format_name ~numero lesson_name in
+  let () = if does_lesson_exist name then
+    raise @@  App.Error.(kotoba_error @@ LessonAlreadyExist name) 
+  in
+  let full_path = Printf.sprintf "%s%s%s" App.kotoba_lesson_dir Filename.dir_sep name in
+
+  let definitions = lwords |> List.map (fun lword -> 
+    {
+      word = lword;
+      stat = default_stat
+    }
+  )
+  in
+
+  let lesson = 
+    {
+      name;
+      numero;
+      definitions
+    }
+  in
+
+  let () = lesson |> lesson_to_yojson |> Yojson.Safe.to_file full_path in
+  ()

@@ -24,6 +24,7 @@ module Error = struct
   | UnableToParseJson of string
   | KotobaFolderAlreadyExist
   | KotobaLessonFolderAlreadyExist
+  | LessonAlreadyExist of string
 
   exception KotobaErrror of kotoba_error
 
@@ -35,7 +36,9 @@ module Error = struct
   | UnableToParseJson path -> sprintf "Error while parsing the json file: %s" path
   | KotobaFolderAlreadyExist -> "Le ficher kotoba existe deja"
   | KotobaLessonFolderAlreadyExist -> "The lesson folder already exists"
+  | LessonAlreadyExist name -> sprintf "The lesson \"%s\" already exists" name
 
+  let kotoba_error e = KotobaErrror e
   let register_kotota_exn () = 
     Printexc.register_printer (function
     | KotobaErrror ke -> Option.some @@ string_of_error ke
