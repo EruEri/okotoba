@@ -23,6 +23,7 @@ module Error = struct
   | UnexistingFile of string
   | UnableToParseJson of string
   | KotobaFolderAlreadyExist
+  | KotobaLessonFolderAlreadyExist
 
   exception KotobaErrror of kotoba_error
 
@@ -33,6 +34,7 @@ module Error = struct
   | UnexistingFile path -> sprintf "Unexisting file \"%s\"" path
   | UnableToParseJson path -> sprintf "Error while parsing the json file: %s" path
   | KotobaFolderAlreadyExist -> "Le ficher kotoba existe deja"
+  | KotobaLessonFolderAlreadyExist -> "The lesson folder already exists"
 
   let register_kotota_exn () = 
     Printexc.register_printer (function
@@ -46,20 +48,28 @@ let kotoba_default_input = "KOTOBA_DEFAULT_INPUT_LANG"
 let config_dir = ".config"
 let kotoba_folder_name = "kotoba"
 
+let kotoba_lesson_dir_name = "lesson"
+
 let word_file = "words.json"
 
-let kotoba_data_dir = 
+let kotoba_dir = 
   let xdg = Xdg.create ~env:Sys.getenv_opt () in
   let dir = Xdg.data_dir xdg in
   Printf.sprintf "%s%s%s" dir Filename.dir_sep kotoba_folder_name
 
+let kotoba_lesson_dir = 
+  Printf.sprintf "%s%s%s" kotoba_dir Filename.dir_sep kotoba_lesson_dir_name
+
 let kotoba_word_file = 
-  Printf.sprintf "%s%s%s" kotoba_data_dir Filename.dir_sep word_file
+  Printf.sprintf "%s%s%s" kotoba_dir Filename.dir_sep word_file
 let is_kotoba_folder_exist () = 
-  Sys.file_exists kotoba_data_dir && Sys.is_directory kotoba_data_dir
+  Sys.file_exists kotoba_dir && Sys.is_directory kotoba_dir
 
 let is_kotoba_word_file_exist () = 
   Sys.file_exists kotoba_word_file && not @@ Sys.is_directory kotoba_word_file
+
+let is_kotoba_lesson_folder_exists () = 
+  Sys.file_exists kotoba_lesson_dir && Sys.is_directory kotoba_lesson_dir
 
 let kotoba_word_json () = 
   let () = if not @@ Sys.file_exists kotoba_word_file then 

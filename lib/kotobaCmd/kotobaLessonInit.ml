@@ -22,13 +22,13 @@ module KApp = KotobaCore.App
 
 let command = "init"
 
-type cmd_init = {
+type cmd = {
   force: bool
 }
 
 let force_term = 
   Arg.( 
-    value & flag & info ~doc:"force the initialisation of $(b,kotoba) by deleting older files even if it exists" ["f"; "force"]
+    value & flag & info ~doc:"force the initialisation of $(b,kotoba) by deleting older lessons even if it exists" ["f"; "force"]
   
   )
 
@@ -42,38 +42,49 @@ let init_term init_func =
     $ force_term
   )
 
-  let cmd_init_doc = "Initialise kotoba"
+  let cmd_init_doc = "Initialise kotoba for lesson"
 
   let cmd_man = [
     `S Manpage.s_description;
-    `P "Initialise kotoba";
+    `P "Initialise kotoba for lesson";
   ]
 
   let init_function cmd = 
     let {force} = cmd in
-    let () = if KApp.is_kotoba_folder_exist () && not force || KApp.is_kotoba_word_file_exist () && not force then
-      raise @@ KError.KotobaErrror KError.KotobaFolderAlreadyExist
+    let () = if KApp.is_kotoba_lesson_folder_exists () && not force then
+      raise @@ KError.KotobaErrror KError.KotobaLessonFolderAlreadyExist
     in
-    let () = match KApp.is_kotoba_folder_exist () with
+    let () = if KApp.is_kotoba_lesson_folder_exists () && force then 
+        Util.File.rmrf KApp.kotoba_lesson_dir ()
+    in 
+    let () = match KApp.is_kotoba_lesson_folder_exists () with
     | true -> ()
     | false -> begin
-      match Util.File.create_folder ~on_error:(KError.UnableToCreateFolder KApp.kotoba_dir) KApp.kotoba_dir with
-      | Ok _ -> ()
-      | Error e -> raise @@ KError.KotobaErrror e
-    end in
-
-    let () = if KApp.is_kotoba_word_file_exist () && force then 
+      let ( >== ) = Result.bind in
+      let base = 
+         if KApp.is_kotoba_folder_exist () then Result.ok () else 
+          Result.map (fun _ -> ()) @@ Util.File.create_folder ~on_error:(KError.UnableToCreateFolder KApp.kotoba_dir) KApp.kotoba_dir 
+      in
+      let res = base >== fun () -> 
+        Util.File.create_folder ~on_error:(KError.UnableToCreateFolder KApp.kotoba_lesson_dir) KApp.kotoba_lesson_dir
+     in
+     match res with
+     | Ok _ -> ()
+     | Error e -> raise @@ KError.KotobaErrror e
+    end
+  in
+    (* let () = if KApp.is_kotoba_word_file_exist () && force then 
       Util.File.rmrf KApp.kotoba_word_file ()
-    in
+    in *)
 
-    let () = if not @@ KApp.is_kotoba_word_file_exist () (* Should always be true*) then
+    (* let () = if not @@ KApp.is_kotoba_word_file_exist () (* Should always be true*) then
       let words = KotobaCore.Word.empty in
       KApp.write_json words ()
-    in
-    let () = Printf.printf "Kotoba initialized\n%!" in
+    in *)
+    let () = Printf.printf "Kotoba Lesson initialized\n%!" in
     ()
     
-    let cmd = 
+    let command = 
       let info = 
         Cmd.info command
         ~doc:cmd_init_doc

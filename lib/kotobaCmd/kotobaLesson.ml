@@ -32,4 +32,4 @@ let command =
     ~doc
     ~man
   in
-  Cmd.group info [KotobaLessonCreate.command]
+  Cmd.group info [KotobaLessonCreate.command; KotobaLessonInit.command]
