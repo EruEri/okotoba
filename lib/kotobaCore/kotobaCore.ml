@@ -18,3 +18,5 @@
 module App = App
 module Error = App.Error
 module Word = Word
+module Wizard = Wizard
+module Lesson = Lesson

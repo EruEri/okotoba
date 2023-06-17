@@ -15,61 +15,47 @@
 (*                                                                                            *)
 (**********************************************************************************************)
 
-open Cmdliner
-
-let command_name = "create"
-
-type command = {
-  numero: int option;
-  name: string;
+type lword = {
+  main_word: string;
+  alternatives: string list;
+  translate: string;
+  sample: string option;
 }
+[@@deriving yojson]
 
-let numero_term =
-  Arg.(
-    value & opt (some int) None & info ["n"; "numero"] ~doc:"numero of the lesson" ~docv:"no_lesson"
-  )
-let name_term =
-  Arg.(
-    required & Arg.pos 0 (Arg.some string) None & info [] ~docv:"lesson name"
-  )
+type difficulty = 
+| Hard
+| NotEasy
+| KindOf
+| Easy
+[@@deriving yojson]
 
-let combine fcommand = 
-  let combine numero name = 
-    fcommand {numero; name}
-  in
-  Term.(
-    const combine
-    $ numero_term
-    $ name_term
-  )
+type score = {
+  good: int;
+  total_attemps: int
+}
+[@@deriving yojson]
 
-let create_doc = "Create a lesson"
+type stat = {
+  difficulty: difficulty;
+  score: score;
+  last_play: float;
+  creation_instant: float;
+}
+[@@deriving yojson]
 
-let create_man = [
-  `S Manpage.s_description;
-  `P "Create a new lesson by giving its name and an optional number";
-  `P "After that, a wizard will help you create your lesson";
-  `P "A lesson is a list of definition";
-  `Noblank;
-  `P "A definition is:";
-  `I ("- $(b,a main word)", "which represent the word that you want to learn");
-  `Noblank;
-  `I ("- $(b,alternatives)", "which represent the others writting for the main word");
-  `Noblank;
-  `I ("- $(b,meaning)", "which represent the meaning of the main word");
-  `Noblank;
-  `I ("- $(b,sample)", "an optional audio")
-]
+type definition = {
+  word: lword;
+  stat: stat
+}
+[@@deriving yojson]
 
-let create_lesson command = 
-  let () = ignore command in
-  let _lesson = KotobaCore.Wizard.CreateLession.ask_lesson () in
-  ()
+type lesson = {
+  name: string;
+  numero: int option;
+  definitions : definition list
+}
+[@@deriving yojson]
 
-let command = 
-  let info = 
-    Cmd.info command_name
-    ~doc:create_doc
-    ~man:create_man
-  in
-  Cmd.v info @@ combine create_lesson
+type lessons = lesson list
+[@@deriving yojson]
